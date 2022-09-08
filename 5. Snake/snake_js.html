@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+
+    <!-- stylowanie w obrębie HTML -->
+    <style>
+        canvas {
+            border: 3px solid white;
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+        body {
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <!-- canvas to jest płótno, któremu nadaję określone id; mogę mu nadawać wymiary - szerokość / wysokość, jak równie kolory -->
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <script>
+        // to jest funkcja, która będzie się wykonywać - por. wywołanie (); na końcu;
+        (function(){
+            let canvas;
+            let context2d;
+            let snake = []
+            // snake = tablica elementów z atrybutami x i y
+            let wallSize = 10;
+            let dx = 0;
+            let dy = 0;
+            let pauseGame = true;
+            let food = {x:0, y:0, color:"white"}
+            let points = 0;
+
+            function getRandomInt(max) {
+                return Math.floor(Math.random() * max);
+            }
+
+            // dzięki temu generujemy grafikę w canvasie
+            function drawRectRandomColor(x,y, width, height) {
+                context2d.fillStyle = `rgb(${getRandomInt(255)},
+                ${getRandomInt(255)},
+                ${getRandomInt(255)})`;
+                context2d.fillRect(x,y, width, height);
+            }
+
+            // tą funkcją czyścimy sobie nasze płótno
+            function clearCanvas() {
+                context2d.fillStyle = "black";
+                context2d.fillRect(0,0, canvas.width, canvas.height);
+            }
+
+            function makeSnake(snakeLength) {
+                for (let i = 0; i < snakeLength; i++) {
+                    let x = canvas.width/2 + i * wallSize;
+                    let y = canvas.height/2;
+                    snake.push({x:x, y:y});
+                }
+            }
+
+            function drawSnake() {
+                snake.forEach( function(el) {
+                    context2d.strokeStyle = "red";
+                    context2d.lineWidth = 5;
+                    context2d.lineJoin = "bevel";
+                    context2d.strokeRect(el.x, el.y, wallSize, wallSize);
+                } );
+            }
+
+            function resetGame() {
+                snake = [];
+                makeSnake(5);
+                randomFood();
+                pauseGame = true;
+            }
+
+            // wprawiamy snake'a w ruch
+            function moveSnake(dx, dy) {
+                let headX = snake[0].x + dx;
+                let headY = snake[0].y + dy;
+                snake.unshift( {x: headX, y:headY} );
+                snake.pop();
+            }
+
+            // zmieniamy połozenie głowy naszego snake'a
+            function keyDown(e) {
+                if(pauseGame) pauseGame = false;
+
+                switch(e.keyCode) {
+                    case 37: // left
+                    case 65: // a
+                        dy = 0;
+                        dx = -10;
+                        break;
+                    case 38: // up
+                    case 87: // w
+                        dy = -10;
+                        dx = 0;
+                        break;
+                    case 39: // right
+                    case 68: // d
+                        dy = 0;
+                        dx = 10;
+                        break;
+                    case 40: // down
+                    case 83: // s
+                        dy = 10;
+                        dx = 0;
+                        break;
+                }
+            }
+
+            function randomFood() {
+                function randV(min, max) {
+                    return Math.floor( (Math.random() * (max-min) + min) / wallSize ) * wallSize;
+                }
+
+                let colors = ["yellow", "silver", "white", "orange"];
+                food.color = colors[ Math.floor(Math.random()*colors.length) ];
+
+                food.x = randV(20, canvas.width - 20);
+                food.y = randV(20, canvas.height - 20);
+            }
+
+            function drawFood() {
+                context2d.fillStyle = food.color;
+                context2d.fillRect( food.x, food.y, wallSize, wallSize );
+            }
+
+            function checkWallsCollision() {
+                snake.forEach(function(el) {
+                    if(el.x > canvas.width || el.x < 0
+                        || el.y > canvas.height || el.y < 0) resetGame()
+                });
+            }
+
+            function checkFoodCollision() {
+                if(food.x == snake[0].x && food.y == snake[0].y) {
+                    snake.push(Object.assign({}, snake[snake.length-1]) );
+                    randomFood();
+                    points++;
+                }
+            }
+
+            function drawPoints() {
+                context2d.font = "20px Arial";
+                context2d.fillStyle = "white";
+                context2d.fillText("Points: " + points, 10,20)
+            }
+
+            function startApp() {
+                canvas = document.getElementById("canvas");
+                context2d = canvas.getContext("2d");
+                document.addEventListener("keydown", keyDown);
+
+                resetGame();
+
+                setInterval( function() {
+                    clearCanvas();
+                    checkWallsCollision();
+                    checkFoodCollision();
+                    if(!pauseGame) moveSnake(dx, dy);
+                    drawFood();
+                    drawSnake();
+                    drawPoints();
+                }, 100 );
+            }
+
+            window.onload = startApp;
+        })();
+
+    </script>
+</body>
+</html>
